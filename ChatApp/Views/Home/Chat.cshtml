@@ -1,0 +1,84 @@
+﻿<h2 id="roomName">@Model.Name</h2>
+<h3>Hi @Request.Cookies["ChatAppNickname"].Value!</h3>
+
+<div class="body-content">
+    @*<div id='messages'></div>*@
+    <div class="col-md-9">
+        <textarea class="form-control" id="messages" onload="ReadLog(@Model.Name)" cols="100" style="width:100%;height:400px;"></textarea>
+        <br />
+        <table>
+            <tr>
+                <td width="auto"><label id="user" for="message">@Request.Cookies["ChatAppNickname"].Value say: </label></td>
+                <td width="600px"><input class="form-control" type="text" id="message" /></td>
+                <td><input class="btn btn-primary" type="button" value="send" id="send" /></td>
+            </tr>
+        </table>
+    </div>
+    <div class="col-md-3">
+        <select class="form-control" multiple="multiple" size="23" style="width:250px;" >
+            @foreach (var user in Model.Users)
+            {
+                <option value="@user">@user</option>
+            }
+        </select>
+    </div>
+    <br />
+    <div>@Html.ActionLink("Back to Lobby", "Rooms", "Home", new { nickname = Request.Cookies["ChatAppNickname"].Value, password = "" }, null)</div>
+    @*<input type="text" id="user" value="" />*@
+    <script>
+        var socket,
+            $txt = document.getElementById('message'),
+            $user = document.getElementById('user'),
+            $messages = document.getElementById('messages');
+
+        if (typeof (WebSocket) !== 'undefined') {
+            socket = new WebSocket("ws://localhost/ChatApp/ChatHandler.ashx");
+        } else {
+            socket = new MozWebSocket("ws://localhost/ChatApp/ChatHandler.ashx");
+        }
+
+        socket.onmessage = function (msg) {
+            var $el = document.createElement('p');
+            $el.innerHTML = msg.data;
+            var text = msg.data.replace(/\u0000/g, "");
+            //$messages.appendChild($el);
+            $messages.value += text;
+            var room = document.getElementById('roomName').innerHTML;
+            LogMessage(text, room);
+        };
+
+        socket.onclose = function (event) {
+            alert('Can not connect. Please refresh the page');
+        };
+
+        document.getElementById('send').onclick = function () {
+            socket.send(new Date().toTimeString() + $user.innerHTML + $txt.value + '\r\n');
+            $txt.value = '';
+        };
+
+        function LogMessage(data, room) {
+            $.ajax({
+                url: "@Url.Action("WriteLog", "Home")",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ message: data, room: room }),
+                success: function(response) {
+                    //response ? alert("It worked!") : alert("It didn't work.");
+                }
+            });
+        }
+
+        function ReadLog(room) {
+            $.ajax({
+                url: "@Url.Action("ReadLog", "Home")",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ room: room }),
+                success: function (response) {
+                    if (response)
+                        $messages.value = response.data;
+                }
+            });
+        }
+    </script>
+</div>

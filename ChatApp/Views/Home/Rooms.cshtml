@@ -1,0 +1,12 @@
+﻿<h3>Hi, @Request.Cookies["ChatAppNickname"].Value! Wellcome to our rooms!</h3>
+<h2>Rooms</h2>
+
+<div>
+    <ul>
+        @foreach (var room in Model)
+        {
+            <li>@room.Name<input class="btn btn-info" type="button" value="Join" onclick="location.href='@Url.Action("Chat", "Home", new { room = room.Name } )'"/></li>
+        }
+    </ul>
+    <input class="btn btn-primary" type="button" value="Create new room" onclick="location.href='@Url.Action("Chat", "Home")';"/>
+</div>
